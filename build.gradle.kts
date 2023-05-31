@@ -13,27 +13,7 @@ plugins {
 }
 
 group = "dev.isxander"
-version = "1.0.0+1.19.4"
-
-/* UNCOMMENT OR DELETE IF YOU WANT TESTMOD SOURCESET
-val testmod by sourceSets.registering {
-    compileClasspath += sourceSets.main.get().compileClasspath
-    runtimeClasspath += sourceSets.main.get().runtimeClasspath
-}
-
-loom {
-    runs {
-        register("testmod") {
-            client()
-            ideConfigGenerated(true)
-            name("Test Mod")
-            source(testmod.get())
-        }
-    }
-
-    createRemapConfigurations(testmod.get())
-}
-*/
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -59,25 +39,6 @@ dependencies {
         officialMojangMappings()
     })
     modImplementation(libs.fabric.loader)
-
-//    modImplementation(libs.fabric.api)
-//    listOf(
-//        "fabric-resource-loader-v0,
-//    ).forEach {
-//        modImplementation(fabricApi.module(it, libs.versions.fabric.api.get()))   
-//    }
-
-    modImplementation(libs.mod.menu)
-    modImplementation(libs.yet.another.config.lib)
-    
-    libs.mixin.extras.let {
-        implementation(it)
-        annotationProcessor(it)
-        include(it)
-        // "clientAnnotationProcessor"(it) // DO NOT FORGET THIS IF SPLIT SOURCEES
-    }
-    
-    
 }
 
 tasks {
@@ -94,7 +55,7 @@ tasks {
         inputs.property("version", project.version)
         inputs.property("github", githubProject)
 
-        filesMatching(listOf("fabric.mod.json", "quilt.mod.json")) {
+        filesMatching("fabric.mod.json") {
             expand(
                 "id" to modId,
                 "group" to project.group,
@@ -135,6 +96,14 @@ java {
 
 val changelogText = file("changelogs/${project.version}.md").takeIf { it.exists() }?.readText() ?: "No changelog provided."
 
+val supportedMcVersions = listOf(
+    "1.19.4",
+    "1.19.3",
+    "1.19.2",
+    "1.19.1",
+    "1.19",
+)
+
 val modrinthId: String by project
 if (modrinthId.isNotEmpty()) {
     modrinth {
@@ -143,7 +112,7 @@ if (modrinthId.isNotEmpty()) {
         versionNumber.set("${project.version}")
         versionType.set("release")
         uploadFile.set(tasks["remapJar"])
-        gameVersions.set(listOf("1.19.4"))
+        gameVersions.set(supportedMcVersions + listOf("1.20-rc1"))
         loaders.set(listOf("fabric", "quilt"))
         changelog.set(changelogText)
         syncBodyFrom.set(file("README.md").readText())
@@ -161,7 +130,8 @@ if (hasProperty("curseforge.token") && curseforgeId.isNotEmpty()) {
 
             id = curseforgeId
             releaseType = "release"
-            addGameVersion("1.19.4")
+            supportedMcVersions.forEach(::addGameVersion)
+            addGameVersion("1.20-Snapshot")
             addGameVersion("Fabric")
             addGameVersion("Java 17")
 
